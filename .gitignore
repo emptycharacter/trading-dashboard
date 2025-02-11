@@ -10,6 +10,10 @@
 !.yarn/releases
 !.yarn/versions
 
+# Ignore Prisma internal files
+prisma/.env
+prisma/migrations/migration_lock.toml
+
 # testing
 /coverage
 
