@@ -1,8 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
 
+type Trade = {
+  id: string;
+  userId: string;
+  symbol: string;
+  entryPrice: number;
+  exitPrice: number | null;
+  profitLoss: number | null;
+  date: string;
+  strategy: string;
+  notes: string;
+};
+
 export default function JournalPage() {
-  const [trades, setTrades] = useState(null);
+  const [trades, setTrades] = useState<Trade[]>([]);
   const [formData, setFormData] = useState({
     symbol: "",
     entryPrice: "",
@@ -14,11 +26,14 @@ export default function JournalPage() {
   useEffect(() => {
     fetch("/api/journal")
       .then((res) => res.json())
-      .then((data) => {
-        console.log("📡 Received API Data:", data); // Debug log
-        setTrades(data);
+      .then((data: Trade[]) => {
+        console.log("📡 Received API Data:", data);
+        setTrades(Array.isArray(data) ? data : []);
       })
-      .catch((err) => console.error("🚨 API Fetch Error:", err));
+      .catch((err) => {
+        console.error("🚨 API Fetch Error:", err);
+        setTrades([]); // Ensure it remains an array
+      });
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -31,7 +46,13 @@ export default function JournalPage() {
 
     if (res.ok) {
       setTrades([...trades, await res.json()]);
-      setFormData({ symbol: "", entryPrice: "", exitPrice: "", strategy: "", notes: "" });
+      setFormData({
+        symbol: "",
+        entryPrice: "",
+        exitPrice: "",
+        strategy: "",
+        notes: "",
+      });
     }
   }
 
@@ -40,7 +61,10 @@ export default function JournalPage() {
       <h1 className="text-3xl font-bold mb-4">Trading Journal</h1>
 
       {/* New Trade Entry */}
-      <form onSubmit={handleSubmit} className="bg-white p-4 shadow-md rounded-lg mb-6">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-4 shadow-md rounded-lg mb-6"
+      >
         <input
           type="text"
           placeholder="Symbol (e.g., AAPL)"
@@ -52,21 +76,27 @@ export default function JournalPage() {
           type="number"
           placeholder="Entry Price"
           value={formData.entryPrice}
-          onChange={(e) => setFormData({ ...formData, entryPrice: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, entryPrice: e.target.value })
+          }
           className="w-full p-2 border rounded-lg mb-2"
         />
         <input
           type="number"
           placeholder="Exit Price (Optional)"
           value={formData.exitPrice}
-          onChange={(e) => setFormData({ ...formData, exitPrice: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, exitPrice: e.target.value })
+          }
           className="w-full p-2 border rounded-lg mb-2"
         />
         <input
           type="text"
           placeholder="Strategy"
           value={formData.strategy}
-          onChange={(e) => setFormData({ ...formData, strategy: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, strategy: e.target.value })
+          }
           className="w-full p-2 border rounded-lg mb-2"
         />
         <textarea
@@ -75,7 +105,9 @@ export default function JournalPage() {
           onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
           className="w-full p-2 border rounded-lg mb-2"
         />
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Trade</button>
+        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+          Save Trade
+        </button>
       </form>
 
       {/* Display Logged Trades */}
@@ -88,9 +120,15 @@ export default function JournalPage() {
             {trades.map((trade, index) => (
               <li key={index} className="border-b py-2">
                 <p>
-                  <strong>{trade.symbol}</strong> - Entry: ${trade.entryPrice}, Exit: {trade.exitPrice ? `$${trade.exitPrice}` : "Open"}, P/L: {trade.profitLoss !== null ? `$${trade.profitLoss}` : "Pending"}
+                  <strong>{trade.symbol}</strong> - Entry: ${trade.entryPrice},
+                  Exit: {trade.exitPrice ? `$${trade.exitPrice}` : "Open"}, P/L:{" "}
+                  {trade.profitLoss !== null
+                    ? `$${trade.profitLoss}`
+                    : "Pending"}
                 </p>
-                <p className="text-sm text-gray-500">{trade.strategy} - {trade.notes}</p>
+                <p className="text-sm text-gray-500">
+                  {trade.strategy} - {trade.notes}
+                </p>
               </li>
             ))}
           </ul>
